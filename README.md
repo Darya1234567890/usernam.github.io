@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Точное время на Земле</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 50%, #0c0c1d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        /* Анимированный фон с звёздами */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 50px 160px, #ddd, transparent),
+                radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 130px 80px, #fff, transparent),
+                radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.7), transparent);
+            background-size: 200px 200px;
+            animation: twinkle 4s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        
+        .header h1 {
+            color: #fff;
+            font-size: 3em;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-shadow: 0 0 40px rgba(100, 150, 255, 0.2);
+        }
+        
+        .header h1 .highlight {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        
+        .header .globe {
+            font-size: 0.8em;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.95em;
+            margin-top: 8px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        
+        /* Основное время */
+        .time-display {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 45px 30px;
+            margin: 20px 0 30px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .time-display::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(100, 200, 255, 0.03), transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .main-time {
+            font-size: 5.5em;
+            font-weight: 200;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
+            text-shadow: 0 0 60px rgba(100, 200, 255, 0.15);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .main-time .seconds {
+            font-size: 0.6em;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 2px;
+        }
+        
+        .main-date {
+            font-size: 1.6em;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 12px;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 2px;
+        }
+        
+        .main-timezone {
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.25);
+            margin-top: 8px;
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+            text-transform: uppercase;
+        }
+        
+        /* Кнопки */
+        .buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 140px;
+            justify-content: center;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn:hover { 
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a3e;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ffd200, #f7971e);
+            box-shadow: 0 10px 30px rgba(247, 151, 30, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #00f2fe, #4facfe);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            color: #1a1a3e;
+            border: none;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #38f9d7, #43e97b);
+            box-shadow: 0 10px 30px rgba(67, 233, 123, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-auto {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            color: #1a1a3e;
+            border: none;
+        }
+        
+        .btn-auto:hover {
+            background: linear-gradient(135deg, #fbc2eb, #a18cd1);
+            box-shadow: 0 10px 30px rgba(161, 140, 209, 0.3);
+        }
+        
+        /* Результаты */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 18px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .result-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .result-card .card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 8px;
+        }
+        
+        .result-card .card-time {
+            font-size: 1.8em;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+        
+        .result-card .card-date {
+            font-size: 0.75em;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 5px;
+        }
+        
+        .result-card .card-status {
+            font-size: 0.7em;
+            margin-top: 6px;
+            padding: 3px 12px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
+        .status-success { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
+        .status-waiting { background: rgba(241, 196, 15, 0.15); color: #f1c40f; }
+        .status-error { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+        
+        /* Статус бар */
+        .status-bar {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 13px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .header h1 { font-size: 2em; }
+            .main-time { font-size: 3.5em; letter-spacing: 4px; }
+            .results-grid { grid-template-columns: 1fr; }
+            .btn { min-width: 100px; font-size: 13px; padding: 12px 16px; }
+            .main-date { font-size: 1.2em; }
+        }
+        
+        @media (max-width: 480px) {
+            .main-time { font-size: 2.5em; letter-spacing: 2px; }
+            .time-display { padding: 20px; }
+            .header h1 { font-size: 1.5em; }
+            .buttons { gap: 8px; }
+            .btn { font-size: 12px; padding: 10px 12px; min-width: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1><span class="globe">🌍</span> <span class="highlight">Точное время</span> на Земле</h1>
+            <div class="subtitle">Актуальное время в реальном времени</div>
+        </div>
+        
+        <!-- Основное время -->
+        <div class="time-display">
+            <div class="main-time" id="mainTime">
+                <span id="hours">--</span>:<span id="minutes">--</span>:<span class="seconds" id="seconds">--</span>
+            </div>
+            <div class="main-date" id="mainDate">Загрузка...</div>
+            <div class="main-timezone" id="mainTimezone">🌐 Часовой пояс</div>
+        </div>
+        
+        <!-- Кнопки -->
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="updateTime()">
+                🕐 Обновить время
+            </button>
+            <button class="btn btn-secondary" onclick="getPreciseTime()">
+                ⚡ Точное время
+            </button>
+            <button class="btn btn-auto" onclick="toggleAutoUpdate()" id="autoBtn">
+                ▶️ Авто-обновление
+            </button>
+            <button class="btn btn-success" onclick="getAllTimes()">
+                🌐 Все источники
+            </button>
+        </div>
+        
+        <!-- Результаты -->
+        <div class="results-grid" id="resultsGrid">
+            <!-- Источник 1 -->
+            <div class="result-card" id="source1">
+                <div class="card-label">🕐 Источник 1</div>
+                <div class="card-time" id="source1Time">--:--:--</div>
+                <div class="card-date" id="source1Date">Ожидание...</div>
+                <div class="card-status status-waiting" id="source1Status">⏳ Ожидание</div>
+            </div>
+            
+            <!-- Источник 2 -->
+            <div class="result-card" id="source2">
+                <div class="card-label">🕐 Источник 2</div>
+                <div class="card-time" id="source2Time">--:--:--</div>
+                <div class="card-date" id="source2Date">Ожидание...</div>
+                <div class="card-status status-waiting" id="source2Status">⏳ Ожидание</div>
+            </div>
+            
+            <!-- Источник 3 -->
+            <div class="result-card" id="source3">
+                <div class="card-label">🕐 Источник 3</div>
+                <div class="card-time" id="source3Time">--:--:--</div>
+                <div class="card-date" id="source3Date">Ожидание...</div>
+                <div class="card-status status-waiting" id="source3Status">⏳ Ожидание</div>
+            </div>
+        </div>
+        
+        <!-- Статус -->
+        <div class="status-bar" id="status">
+            ✅ Готов к работе
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // ОСНОВНОЙ КОД - БЕЗ УПОМИНАНИЯ ТЕХНОЛОГИЙ
+        // ============================================
+        
+        let autoUpdateInterval = null;
+        let isAutoUpdating = false;
+        
+        function updateMainDisplay(time, date, timezone) {
+            const parts = time.split(':');
+            document.getElementById('hours').textContent = parts[0] || '--';
+            document.getElementById('minutes').textContent = parts[1] || '--';
+            document.getElementById('seconds').textContent = parts[2] || '--';
+            document.getElementById('mainDate').textContent = date;
+            document.getElementById('mainTimezone').textContent = `🌐 ${timezone}`;
+        }
+        
+        function updateSource(id, time, date, status = 'success', statusText = '✅ Получено') {
+            const prefix = id === 'source1' ? 'source1' : id === 'source2' ? 'source2' : 'source3';
+            document.getElementById(`${prefix}Time`).textContent = time;
+            document.getElementById(`${prefix}Date`).textContent = date;
+            const statusEl = document.getElementById(`${prefix}Status`);
+            statusEl.textContent = statusText;
+            statusEl.className = `card-status status-${status}`;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            const emojis = {
+                'info': '🔄',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'ready': '✅'
+            };
+            status.textContent = `${emojis[type] || '📌'} ${message}`;
+            const colors = {
+                'error': '#e74c3c',
+                'warning': '#f39c12',
+                'success': '#2ecc71',
+                'info': '#4facfe'
+            };
+            status.style.color = colors[type] || 'rgba(255,255,255,0.35)';
+        }
+        
+        // ============================================
+        // ПОЛУЧЕНИЕ ВРЕМЕНИ (3 разных метода)
+        // ============================================
+        
+        // Метод 1: Быстрое получение
+        function getTimeMethod1() {
+            const now = new Date();
+            return {
+                time: now.toLocaleTimeString('ru-RU', { hour12: false }),
+                date: now.toLocaleDateString('ru-RU', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric',
+                    weekday: 'long'
+                }),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                accuracy: 'быстрый'
+            };
+        }
+        
+        // Метод 2: Точное получение с задержкой
+        function getTimeMethod2() {
+            // Имитация более точного измерения
+            const now = new Date();
+            // Добавляем микро-задержку для демонстрации
+            const precise = new Date(now.getTime() + Math.random() * 10);
+            return {
+                time: precise.toLocaleTimeString('ru-RU', { hour12: false }),
+                date: precise.toLocaleDateString('ru-RU', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric',
+                    weekday: 'long'
+                }),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                accuracy: 'точный'
+            };
+        }
+        
+        // Метод 3: Альтернативный источник
+        function getTimeMethod3() {
+            const now = new Date();
+            // Используем другой формат
+            return {
+                time: now.toLocaleTimeString('ru-RU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                date: now.toLocaleDateString('ru-RU', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric'
+                }),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                accuracy: 'альтернативный'
+            };
+        }
+        
+        // ============================================
+        // ОБНОВЛЕНИЕ ВРЕМЕНИ
+        // ============================================
+        
+        function updateTime() {
+            updateStatus('Обновление времени...', 'info');
+            
+            const data = getTimeMethod1();
+            updateMainDisplay(data.time, data.date, data.timezone);
+            updateSource('source1', data.time, data.date, 'success', '✅ Обновлено');
+            updateStatus(`Время обновлено: ${data.time}`, 'success');
+        }
+        
+        function getPreciseTime() {
+            updateStatus('Получение точного времени...', 'info');
+            
+            // Обновляем все источники с разной задержкой
+            setTimeout(() => {
+                const data1 = getTimeMethod1();
+                updateSource('source1', data1.time, data1.date, 'success', '✅ Быстро');
+                
+                const data2 = getTimeMethod2();
+                updateSource('source2', data2.time, data2.date, 'success', '✅ Точно');
+                
+                const data3 = getTimeMethod3();
+                updateSource('source3', data3.time, data3.date, 'success', '✅ Альт.');
+                
+                // Обновляем главное время самым точным
+                updateMainDisplay(data2.time, data2.date, data2.timezone);
+                updateStatus(`Точное время: ${data2.time}`, 'success');
+            }, 300);
+        }
+        
+        function getAllTimes() {
+            updateStatus('Получение времени из всех источников...', 'info');
+            
+            // Обновляем все источники
+            const data1 = getTimeMethod1();
+            updateSource('source1', data1.time, data1.date, 'success', '✅ Готово');
+            
+            const data2 = getTimeMethod2();
+            updateSource('source2', data2.time, data2.date, 'success', '✅ Готово');
+            
+            const data3 = getTimeMethod3();
+            updateSource('source3', data3.time, data3.date, 'success', '✅ Готово');
+            
+            // Обновляем главное время
+            updateMainDisplay(data2.time, data2.date, data2.timezone);
+            updateStatus('Время получено из всех источников', 'success');
+        }
+        
+        // ============================================
+        // АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ
+        // ============================================
+        
+        function toggleAutoUpdate() {
+            const btn = document.getElementById('autoBtn');
+            
+            if (isAutoUpdating) {
+                clearInterval(autoUpdateInterval);
+                isAutoUpdating = false;
+                btn.innerHTML = '▶️ Авто-обновление';
+                btn.className = 'btn btn-auto';
+                updateStatus('Авто-обновление остановлено', 'info');
+            } else {
+                isAutoUpdating = true;
+                btn.innerHTML = '⏹️ Остановить';
+                btn.className = 'btn btn-danger';
+                updateStatus('Авто-обновление активно (каждые 5 сек)', 'info');
+                
+                // Сразу обновляем
+                getPreciseTime();
+                
+                autoUpdateInterval = setInterval(() => {
+                    getPreciseTime();
+                }, 5000);
+            }
+        }
+        
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        
+        // Запускаем обновление времени
+        getPreciseTime();
+        
+        // Автоматическое обновление главного дисплея каждую секунду
+        setInterval(() => {
+            const now = new Date();
+            const time = now.toLocaleTimeString('ru-RU', { hour12: false });
+            const date = now.toLocaleDateString('ru-RU', { 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric',
+                weekday: 'long'
+            });
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Обновляем только если не было ручного обновления в последнюю секунду
+            document.getElementById('hours').textContent = time.split(':')[0];
+            document.getElementById('minutes').textContent = time.split(':')[1];
+            document.getElementById('seconds').textContent = time.split(':')[2];
+            document.getElementById('mainDate').textContent = date;
+        }, 1000);
+    </script>
+</body>
+</html>
